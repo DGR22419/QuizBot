@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload PDF - QuizBOT</title>
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #vanta-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, rgba(38,66,222,0.95) 0%, rgba(165,179,255,0.95) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 1.8rem;
+            max-width: 600px;
+            width: 95%;
+            max-height: 90vh;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            transition: transform 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container:hover {
+            transform: translateY(-3px);
+        }
+
+        h1 {
+            color: #2f8c2f;
+            margin: 0 0 1rem 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .form-content {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 5px; /* Space for scrollbar */
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .form-content::-webkit-scrollbar {
+            width: 3px;
+        }
+        
+        .form-content::-webkit-scrollbar-thumb {
+            background-color: rgba(77, 100, 230, 0.5);
+            border-radius: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .form-grid-full {
+            grid-column: span 2;
+        }
+
+        .form-group {
+            text-align: left;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.3rem;
+            color: #444;
+            font-size: 0.85rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"],
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus,
+        input[type="datetime-local"]:focus {
+            outline: none;
+            border-color: #4d64e6;
+            box-shadow: 0 0 0 3px rgba(77, 100, 230, 0.2);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4d64e6;
+            cursor: pointer;
+        }
+
+        .buttons-container {
+            margin-top: 0.8rem;
+        }
+
+        button {
+            width: 100%;
+            background-color: #4d64e6;
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(77, 100, 230, 0.2);
+        }
+
+        button:hover {
+            background-color: #3b50cc;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(77, 100, 230, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 0.8rem;
+            text-decoration: none;
+            color: #2f8c2f;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+        }
+
+        .back-link:hover {
+            background-color: rgba(47, 140, 47, 0.1);
+            transform: translateX(-5px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Loading overlay styles */
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        /* Percentage loading styles */
+        .progress-container {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .progress-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #f0f0f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            clip: rect(0px, 75px, 150px, 0px);
+            background: #4d64e6;
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        .progress-cover {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: calc(100% - 20px);
+            height: calc(100% - 20px);
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-percentage {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #4d64e6;
+        }
+
+        .loading-text {
+            color: #4d64e6;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1.5rem;
+                border-radius: 15px;
+                max-width: 95%;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+                margin-bottom: 0.8rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 0.6rem;
+            }
+
+            .form-grid-full {
+                grid-column: span 1;
+            }
+
+            .progress-container {
+                width: 120px;
+                height: 120px;
+            }
+
+            .progress-percentage {
+                font-size: 2rem;
+            }
+            
+            .loading-text {
+                font-size: 1rem;
+            }
+            
+            input[type="text"],
+            input[type="number"],
+            input[type="file"],
+            input[type="datetime-local"] {
+                padding: 0.5rem 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="vanta-bg"></div>
+    <div class="container">
+        <!-- Loading Overlay with Percentage -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="progress-container">
+                <div class="progress-circle">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-cover">
+                        <div class="progress-percentage" id="progressPercentage">0%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="loading-text">Generating your Quiz with AI ...</div>
+        </div>
+
+        <h1>Upload PDF to Generate Quiz</h1>
+        
+        <div class="form-content">
+            <form method="post" action="{% url 'upload_pdf' %}" enctype="multipart/form-data" id="quizForm">
+                {% csrf_token %}
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="title">Quiz Title:</label>
+                        <input type="text" id="title" name="title" placeholder="Enter quiz title" value="Generated Quiz" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="duration">Duration (minutes):</label>
+                        <input type="number" id="duration" name="duration" min="1" value="5" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="count">Number of MCQs:</label>
+                        <input type="number" id="count" name="count" min="1" value="5" max="20" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-container">
+                            <label for="schedule_quiz">Schedule Quiz:</label>
+                            <input type="checkbox" id="schedule_quiz" name="schedule_quiz">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group hidden" id="start_time_group">
+                        <label for="start_time">Start Time:</label>
+                        <input type="datetime-local" id="start_time" name="start_time">
+                    </div>
+                    
+                    <div class="form-group hidden" id="end_time_group">
+                        <label for="end_time">End Time:</label>
+                        <input type="datetime-local" id="end_time" name="end_time">
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-container">
+                            <label for="show_results_to_student">Show Results:</label>
+                            <input type="checkbox" id="show_results_to_student" name="show_results_to_student" checked>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-container">
+                            <label for="is_active">Quiz is Active:</label>
+                            <input type="checkbox" id="is_active" name="is_active" checked>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group form-grid-full">
+                        <label for="pdf">Upload PDF:</label>
+                        <input type="file" id="pdf" name="pdf" accept="application/pdf" required>
+                    </div>
+                </div>
+
+                <div class="buttons-container">
+                    <button type="submit">Generate Quiz</button>
+                    <a href="{% url 'teacher_home' %}" class="back-link">← Back to Dashboard</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Set default start and end times
+        function setDefaultTimes() {
+            const now = new Date();
+            
+            // Set start time to 1 hour from now
+            const startTime = new Date(now);
+            startTime.setHours(startTime.getHours() + 1);
+            document.getElementById('start_time').value = formatDateForInput(startTime);
+            
+            // Set end time to start time + duration minutes
+            const duration = parseInt(document.getElementById('duration').value) || 5;
+            const endTime = new Date(startTime);
+            endTime.setMinutes(endTime.getMinutes() + duration);
+            document.getElementById('end_time').value = formatDateForInput(endTime);
+        }
+        
+        // Helper function to format date for datetime-local input
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+        
+        // Update end time when duration changes
+        document.getElementById('duration').addEventListener('change', function() {
+            if (!document.getElementById('schedule_quiz').checked) return;
+            
+            const startTimeStr = document.getElementById('start_time').value;
+            if (!startTimeStr) return;
+            
+            const startTime = new Date(startTimeStr);
+            const duration = parseInt(this.value) || 5;
+            const endTime = new Date(startTime);
+            endTime.setMinutes(endTime.getMinutes() + duration);
+            
+            document.getElementById('end_time').value = formatDateForInput(endTime);
+        });
+        
+        // Toggle time fields visibility
+        document.getElementById('schedule_quiz').addEventListener('change', function() {
+            const startTimeGroup = document.getElementById('start_time_group');
+            const endTimeGroup = document.getElementById('end_time_group');
+            
+            if (this.checked) {
+                startTimeGroup.classList.remove('hidden');
+                endTimeGroup.classList.remove('hidden');
+                setDefaultTimes();
+            } else {
+                startTimeGroup.classList.add('hidden');
+                endTimeGroup.classList.add('hidden');
+            }
+        });
+        
+        // Handle form submission
+        document.getElementById('quizForm').addEventListener('submit', function(e) {
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.add('active');
+            
+            // Disable the submit button to prevent double submission
+            document.querySelector('button[type="submit"]').disabled = true;
+            
+            // Start the percentage counter animation
+            simulateProgress();
+        });
+        
+        function simulateProgress() {
+            const progressPercentage = document.getElementById('progressPercentage');
+            const progressFill = document.getElementById('progressFill');
+            let percent = 0;
+            
+            // This is a simulation - in a real application, you would update 
+            // this based on actual progress from your backend
+            const interval = setInterval(() => {
+                if (percent >= 99) {
+                    clearInterval(interval);
+                    // In a real app, you would stop here when the upload is complete
+                    // and let the form submission redirect to the next page
+                } else {
+                    // Increase percentage, slower as it gets closer to 100%
+                    const increment = percent < 50 ? 2 : (percent < 80 ? 1 : 0.5);
+                    percent += increment;
+                    updateProgress(Math.floor(percent));
+                }
+            }, 200);
+            
+            function updateProgress(value) {
+                progressPercentage.textContent = `${value}%`;
+                
+                // Calculate rotation based on percentage (180 degrees = 50%, 360 degrees = 100%)
+                const rotation = value <= 50 
+                    ? (value / 50) * 180 
+                    : 180 + ((value - 50) / 50) * 180;
+                
+                if (value <= 50) {
+                    progressFill.style.transform = `rotate(${rotation}deg)`;
+                    progressFill.style.clip = 'rect(0px, 75px, 150px, 0px)';
+                } else {
+                    // For values > 50%, we need to add a second half of the circle
+                    progressFill.style.clip = 'rect(0px, 150px, 150px, 0px)';
+                    progressFill.style.transform = `rotate(${rotation}deg)`;
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.net.min.js"></script>
+    <script>
+        VANTA.NET({
+            el: "#vanta-bg",
+            color: 0xd9def9, // Color of the net
+            backgroundColor: 0x4d64e6, // Background color
+            points: 20.0, // Reduced number of points
+            maxDistance: 20.0, // Maximum distance between points
+            spacing: 20.0 // Spacing of the net
+        });
+    </script>
+</body>
+</html>

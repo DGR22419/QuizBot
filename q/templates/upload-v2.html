@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload PDF - QuizBOT</title>
+    <style>
+        /* ... Previous styles remain the same ... */
+        #vanta-bg {
+            width: 100%;
+            height: 100vh;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, rgba(38,66,222,0.95) 0%, rgba(165,179,255,0.95) 100%);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 2.5rem;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            color: #2f8c2f;
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #444;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
+            width: 93%;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="file"]:focus {
+            outline: none;
+            border-color: #4d64e6;
+            box-shadow: 0 0 0 3px rgba(77, 100, 230, 0.2);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            margin-bottom: 1rem;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #4d64e6;
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            background-color: #4d64e6;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            box-shadow: 0 4px 6px rgba(77, 100, 230, 0.2);
+        }
+
+        button:hover {
+            background-color: #3b50cc;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(77, 100, 230, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            text-decoration: none;
+            color: #2f8c2f;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+
+        .back-link:hover {
+            background-color: rgba(47, 140, 47, 0.1);
+            transform: translateX(-5px);
+        }
+
+        /* Loading overlay styles */
+        .loading-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        /* Percentage loading styles */
+        .progress-container {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .progress-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #f0f0f0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            clip: rect(0px, 100px, 200px, 0px);
+            background: #4d64e6;
+            transform-origin: center;
+            transition: transform 0.3s ease;
+        }
+
+        .progress-cover {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: calc(100% - 20px);
+            height: calc(100% - 20px);
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-percentage {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #4d64e6;
+        }
+
+        .loading-text {
+            color: #4d64e6;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .progress-container {
+                width: 150px;
+                height: 150px;
+            }
+
+            .progress-percentage {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body id="vanta-bg">
+    <div class="container">
+        <!-- Loading Overlay with Percentage -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="progress-container">
+                <div class="progress-circle">
+                    <div class="progress-fill" id="progressFill"></div>
+                    <div class="progress-cover">
+                        <div class="progress-percentage" id="progressPercentage">0%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="loading-text">Generating your Quiz with AI ...</div>
+        </div>
+
+        <h1>Upload PDF to Generate Quiz</h1>
+        <form method="post" action="{% url 'upload_pdf' %}" enctype="multipart/form-data" id="quizForm">
+            {% csrf_token %}
+
+            <label for="title">Quiz Title:</label>
+            <input type="text" id="title" name="title" placeholder="Enter quiz title" value="Generated Quiz" required>
+
+            <label for="duration">Duration (minutes):</label>
+            <input type="number" id="duration" name="duration" min="1" value="5" required>
+
+            <label for="count">Numbers of MCQ :</label>
+            <input type="number" id="count" name="count" min="1" value="5" max="20" required>
+
+            <div class="checkbox-container">
+                <label for="show_results_to_student">Show Results to Students:</label>
+                <input type="checkbox" id="show_results_to_student" name="show_results_to_student" checked>
+            </div>
+
+            <div class="checkbox-container">
+                <label for="is_active">Quiz is Active:</label>
+                <input type="checkbox" id="is_active" name="is_active" checked>
+            </div>
+
+            <label for="pdf">Upload PDF:</label>
+            <input type="file" id="pdf" name="pdf" accept="application/pdf" required>
+
+            <button type="submit">Generate Quiz</button>
+
+            <a href="{% url 'teacher_home' %}" class="back-link">← Back to Dashboard</a>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('quizForm').addEventListener('submit', function(e) {
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.add('active');
+            
+            // Optional: Disable the submit button to prevent double submission
+            document.querySelector('button[type="submit"]').disabled = true;
+            
+            // Start the percentage counter animation
+            simulateProgress();
+        });
+        
+        function simulateProgress() {
+            const progressPercentage = document.getElementById('progressPercentage');
+            const progressFill = document.getElementById('progressFill');
+            let percent = 0;
+            
+            // This is a simulation - in a real application, you would update 
+            // this based on actual progress from your backend
+            const interval = setInterval(() => {
+                if (percent >= 99) {
+                    clearInterval(interval);
+                    // In a real app, you would stop here when the upload is complete
+                    // and let the form submission redirect to the next page
+                } else {
+                    // Increase percentage, slower as it gets closer to 100%
+                    const increment = percent < 50 ? 2 : (percent < 80 ? 1 : 0.5);
+                    percent += increment;
+                    updateProgress(Math.floor(percent));
+                }
+            }, 200);
+            
+            function updateProgress(value) {
+                progressPercentage.textContent = `${value}%`;
+                
+                // Calculate rotation based on percentage (180 degrees = 50%, 360 degrees = 100%)
+                const rotation = value <= 50 
+                    ? (value / 50) * 180 
+                    : 180 + ((value - 50) / 50) * 180;
+                
+                if (value <= 50) {
+                    progressFill.style.transform = `rotate(${rotation}deg)`;
+                    progressFill.style.clip = 'rect(0px, 100px, 200px, 0px)';
+                } else {
+                    // For values > 50%, we need to add a second half of the circle
+                    progressFill.style.clip = 'rect(0px, 200px, 200px, 0px)';
+                    progressFill.style.transform = `rotate(${rotation}deg)`;
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanta/0.5.24/vanta.net.min.js"></script>
+    <script>
+        VANTA.NET({
+            el: "#vanta-bg",
+            color: 0xd9def9, // Change color of the net
+            backgroundColor: 0x4d64e6, // Background color
+            points: 25.0, // Number of points in the net
+            maxDistance: 20.0, // Maximum distance between points
+            spacing: 20.0 // Spacing of the net
+        });
+    </script>
+</body>
+</html>
